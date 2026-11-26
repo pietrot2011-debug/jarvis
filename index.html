@@ -6,46 +6,184 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <title>J.A.R.V.I.S.</title>
 <style>
-  html, body { height: 100%; margin: 0; }
-  body {
-    background: radial-gradient(circle at 50% 40%, #0b3b72 0%, #041a33 45%, #010812 100%);
-    color: #cfefff; font-family: -apple-system, system-ui, sans-serif;
-    overflow: hidden; display: flex; align-items: center; justify-content: center;
-  }
-  #splash {
-    position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
-    z-index: 2; transition: opacity .6s, visibility .6s;
-  }
-  #splash.off { opacity: 0; visibility: hidden; }
-  .titolo {
-    font-size: clamp(26px, 7vw, 60px); font-weight: 300; letter-spacing: .25em;
-    text-shadow: 0 0 18px #38bdf8, 0 0 40px #0ea5e9; white-space: nowrap;
-  }
-  .l {
-    display: inline-block; opacity: 0; filter: blur(6px);
-    transform: translateY(12px) scale(.9); animation: entra .5s forwards;
-  }
-  @keyframes entra { to { opacity: 1; filter: none; transform: none; } }
-  #app {
-    display: none; flex-direction: column; align-items: center; justify-content: center;
-    width: 100%; height: 100%; padding: 24px; box-sizing: border-box;
-  }
-  #app.on { display: flex; animation: apri .8s ease both; }
-  @keyframes apri { from { opacity: 0; } to { opacity: 1; } }
-  #orb { cursor: pointer; -webkit-tap-highlight-color: transparent; }
-  #etich {
-    margin-top: 16px; font-size: 14px; letter-spacing: .2em; color: #38bdf8;
-    text-shadow: 0 0 10px #0ea5e9; text-transform: uppercase; min-height: 20px;
-  }
-  #log {
-    margin-top: 22px; max-width: 620px; min-height: 80px; font-size: 16px;
-    line-height: 1.5; text-align: center; white-space: pre-wrap; color: #e0f7ff;
-  }
+html, body { height: 100%; margin: 0; }
+body {
+  background: radial-gradient(circle at 50% 40%, #0b3b72 0%, #041a33 45%, #010812 100%);
+  color: #cfefff; font-family: -apple-system, system-ui, sans-serif;
+  overflow: hidden; display: flex; align-items: center; justify-content: center; text-align: center;
+}
+#titolo {
+  font-size: clamp(26px, 7vw, 60px); font-weight: 300; letter-spacing: .25em;
+  text-shadow: 0 0 18px #38bdf8, 0 0 40px #0ea5e9; white-space: nowrap;
+  animation: entra 1.5s ease both;
+}
+@keyframes entra { from { opacity: 0; filter: blur(8px); } to { opacity: 1; filter: none; } }
+#app { display: none; flex-direction: column; align-items: center; width: 100%; padding: 24px; box-sizing: border-box; }
+#orb { cursor: pointer; -webkit-tap-highlight-color: transparent; }
+#etich { margin-top: 16px; font-size: 14px; letter-spacing: .2em; color: #38bdf8; text-transform: uppercase; }
+#log { margin-top: 22px; max-width: 620px; min-height: 80px; font-size: 16px; line-height: 1.5; white-space: pre-wrap; }
 </style>
 </head>
 <body>
 
-<div id="splash"><div class="titolo" id="titolo"></div></div>
+<div id="titolo">J. A. R. V. I. S.</div>
 
-<main id="app">
-  <canvas
+<div id="app">
+  <canvas id="orb"></canvas>
+  <div id="etich">Tocca per parlare</div>
+  <div id="log"></div>
+</div>
+
+<script>
+  // Dopo 2 secondi nasconde il titolo e mostra l'onda
+  const titolo = document.getElementById('titolo');
+  const app = document.getElementById('app');
+  setTimeout(() => {
+    titolo.style.display = 'none';
+    app.style.display = 'flex';
+  }, 2200);
+
+  // Onda stile Siri
+  const cv = document.getElementById('orb');
+  const cx = cv.getContext('2d');
+  let stato = 'idle', amp = 0.12, t = 0;
+  const colori = ['#38bdf8', '#22d3ee', '#818cf8', '#60a5fa'];
+
+  function ridimensiona() {
+    const d = Math.min(innerWidth, innerHeight) * 0.6;
+    cv.width = d * devicePixelRatio;
+    cv.height = d * devicePixelRatio;
+    cv.style.width = d + 'px';
+    cv.style.height = d + 'px';
+  }
+  ridimensiona();
+  addEventListener('resize', ridimensiona);
+
+  function disegna() {
+    const w = cv.width, h = cv.height, r = Math.min(w, h) / 2;
+    let ob = 0.12;
+    if (stato === 'listening') ob = 0.35 + 0.3 * Math.abs(Math.sin(t * 7));
+    if (stato === 'thinking') ob = 0.2;
+    if (stato === 'speaking') ob = 0.55 + 0.4 * Math.random();
+    amp += (ob - amp) * 0.12;
+    t += 0.025;
+    cx.clearRect(0, 0, w, h);
+    cx.globalCompositeOperation = 'lighter';
+    colori.forEach((c, k) => {
+      cx.beginPath();
+      for (let x = 0; x <= w; x += 4) {
+        const p = x / w * 2 - 1, env = 1 - p * p;
+        const y = h / 2 +
+          Math.sin(p * 3 + t * (1 + k * 0.3) + k) * amp * r * 0.5 * env +
+          Math.sin(p * 7 - t * 2 + k) * amp * r * 0.15 * env;
+        if (x === 0) cx.moveTo(x, y); else cx.lineTo(x, y);
+      }
+      cx.strokeStyle = c;
+      cx.lineWidth = w / 60;
+      cx.shadowColor = c;
+      cx.shadowBlur = 30;
+      cx.globalAlpha = 0.85;
+      cx.stroke();
+    });
+    requestAnimationFrame(disegna);
+  }
+  disegna();
+
+  // Stato e testo
+  const etich = document.getElementById('etich');
+  const log = document.getElementById('log');
+  const testi = { idle: 'Tocca per parlare', listening: 'Ti ascolto', thinking: 'Elaboro', speaking: 'Tocca per interrompere' };
+  function setStato(s) { stato = s; etich.textContent = testi[s]; }
+
+  // Chiave Gemini: chiesta una volta sola, salvata su questo iPad
+  const NOME_CHIAVE = 'jarvis_gemini_key';
+  function chiave() {
+    let k = localStorage.getItem(NOME_CHIAVE);
+    if (!k) {
+      k = (prompt('Incolla la tua chiave Gemini (resta salvata solo su questo iPad):') || '').trim();
+      if (k) localStorage.setItem(NOME_CHIAVE, k);
+    }
+    return k;
+  }
+
+  // Cervello: Gemini
+  const ISTRUZIONI = 'Sei J.A.R.V.I.S., un assistente personale elegante e preciso. ' +
+    'Chiami l\'utente Pietro. Rispondi sempre in italiano, in modo netto: al massimo 2 o 3 frasi brevi, ' +
+    'senza elenchi e senza simboli, perché la risposta viene letta ad alta voce.';
+  const storia = [];
+
+  async function chiedi(domanda) {
+    const k = chiave();
+    if (!k) throw new Error('manca la chiave Gemini');
+    storia.push({ role: 'user', parts: [{ text: domanda }] });
+    const r = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=' + k, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        system_instruction: { parts: [{ text: ISTRUZIONI }] },
+        contents: storia.slice(-10)
+      })
+    });
+    const d = await r.json();
+    if (!d.candidates) {
+      if (r.status === 400 || r.status === 403) localStorage.removeItem(NOME_CHIAVE);
+      throw new Error(d.error ? d.error.message : 'nessuna risposta');
+    }
+    const testo = d.candidates[0].content.parts[0].text.trim();
+    storia.push({ role: 'model', parts: [{ text: testo }] });
+    return testo;
+  }
+
+  // Voce: ascolto
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const rec = SR ? new SR() : null;
+  if (rec) {
+    rec.lang = 'it-IT';
+    rec.interimResults = false;
+    rec.continuous = false;
+    rec.onresult = e => ascolta(e.results[0][0].transcript);
+    rec.onerror = () => { setStato('idle'); log.textContent = 'Non ho sentito bene, Pietro. Riprova.'; };
+    rec.onend = () => { if (stato === 'listening') setStato('idle'); };
+  }
+
+  cv.onclick = () => {
+    if (stato === 'speaking') { speechSynthesis.cancel(); setStato('idle'); return; }
+    if (stato !== 'idle') return;
+    if (!rec) { log.textContent = 'Usa Safari per la voce.'; return; }
+    if (!chiave()) { log.textContent = 'Serve la chiave Gemini: tocca di nuovo l\'onda.'; return; }
+    setStato('listening');
+    log.textContent = '';
+    rec.start();
+  };
+
+  async function ascolta(frase) {
+    log.textContent = 'Tu: ' + frase;
+    setStato('thinking');
+    try {
+      const risposta = await chiedi(frase);
+      parla(risposta);
+    } catch (e) {
+      setStato('idle');
+      log.textContent = 'Errore: ' + e.message;
+    }
+  }
+
+  // Voce: risposta
+  function parla(testo) {
+    log.textContent = testo;
+    setStato('speaking');
+    const u = new SpeechSynthesisUtterance(testo);
+    u.lang = 'it-IT';
+    u.rate = 1.05;
+    u.pitch = 0.9;
+    const voce = speechSynthesis.getVoices().find(v => v.lang.startsWith('it'));
+    if (voce) u.voice = voce;
+    u.onend = () => setStato('idle');
+    u.onerror = () => setStato('idle');
+    speechSynthesis.speak(u);
+  }
+
+  setStato('idle');
+</script>
+</body>
+</html>
