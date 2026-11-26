@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>J.A.R.V.I.S.</title>
+<style>
+  html, body { height: 100%; margin: 0; }
+  body {
+    background: radial-gradient(circle at 50% 40%, #0b3b72 0%, #041a33 45%, #010812 100%);
+    color: #cfefff; font-family: -apple-system, system-ui, sans-serif;
+    overflow: hidden; display: flex; align-items: center; justify-content: center;
+  }
+  #splash {
+    position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
+    z-index: 2; transition: opacity .6s, visibility .6s;
+  }
+  #splash.off { opacity: 0; visibility: hidden; }
+  .titolo {
+    font-size: clamp(26px, 7vw, 60px); font-weight: 300; letter-spacing: .25em;
+    text-shadow: 0 0 18px #38bdf8, 0 0 40px #0ea5e9; white-space: nowrap;
+  }
+  .l {
+    display: inline-block; opacity: 0; filter: blur(6px);
+    transform: translateY(12px) scale(.9); animation: entra .5s forwards;
+  }
+  @keyframes entra { to { opacity: 1; filter: none; transform: none; } }
+  #app {
+    display: none; flex-direction: column; align-items: center; justify-content: center;
+    width: 100%; height: 100%; padding: 24px; box-sizing: border-box;
+  }
+  #app.on { display: flex; animation: apri .8s ease both; }
+  @keyframes apri { from { opacity: 0; } to { opacity: 1; } }
+  #orb { cursor: pointer; -webkit-tap-highlight-color: transparent; }
+  #etich {
+    margin-top: 16px; font-size: 14px; letter-spacing: .2em; color: #38bdf8;
+    text-shadow: 0 0 10px #0ea5e9; text-transform: uppercase; min-height: 20px;
+  }
+  #log {
+    margin-top: 22px; max-width: 620px; min-height: 80px; font-size: 16px;
+    line-height: 1.5; text-align: center; white-space: pre-wrap; color: #e0f7ff;
+  }
+</style>
+</head>
+<body>
+
+<div id="splash"><div class="titolo" id="titolo"></div></div>
+
+<main id="app">
+  <canvas
